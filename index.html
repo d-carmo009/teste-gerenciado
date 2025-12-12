@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Benefícios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="script.js">
+    
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-md flex flex-col">
+            <div class="p-4 border-b">
+                <h1 class="text-2xl font-bold text-gray-800">RH Gerencial</h1>
+            </div>
+            <nav class="flex-1 p-2">
+                <button data-view="benefits" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100 active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span>Cálculo / Resumo</span> 
+                </button>
+                 <button data-view="reports" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100"> 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    <span>Relatórios</span>
+                </button>
+                <button data-view="events" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>Lançar Eventos</span>
+                </button>
+                <button data-view="employees" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Colaboradores</span>
+                </button>
+                <button data-view="setores" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3Z"/><path d="M8 21v-3.097a3 3 0 0 1 1.09-2.308L12 12.5l2.91 3.095A3 3 0 0 1 16 17.903V21"/></svg>
+                    <span>Setores</span>
+                </button>
+                <button data-view="localidades" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7 8.7 21.3c-1 1-2.3 1-3.3 0l-2-2c-1-1-1-2.3 0-3.3L17.7 2.7c1-1 2.3-1 3.3 0l2 2c1 1 1 2.3 0 3.3Z"/><path d="M6.5 17.5 3 21"/><path d="m19.5 6.5 1-1C21.4 4.6 22 3.4 22 2c0-1.1-.9-2-2-2-1.4 0-2.6.6-3.5 1.5l-1 1"/><path d="m7 15 3.5 3.5"/><path d="m13 9 3.5 3.5"/></svg>
+                     <span>Localidades</span>
+                </button>
+                <button data-view="units" class="sidebar-button w-full flex items-center gap-3 p-3 rounded-lg text-left font-semibold transition-colors text-gray-600 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><path d="M8 9h.01M12 9h.01M16 9h.01M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01"/></svg>
+                    <span>Unidades</span>
+                </button>
+            </nav>
+            <div class="p-3 border-t">
+                 <h3 class="text-sm font-semibold text-gray-500 mb-2 px-2">Backup Local</h3>
+                 <button id="export-local-button" class="w-full flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Exportar Dados Locais</span>
+                </button>
+                 <button id="import-local-button" class="w-full flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>Importar Dados Locais</span>
+                </button>
+                 <input type="file" id="import-file-input" accept=".json">
+            </div>
+            <div class="p-3 border-t">
+                <h3 class="text-sm font-semibold text-gray-500 mb-2 px-2">Sincronização Nuvem</h3>
+                <button id="upload-button" class="w-full flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+                    <span>Salvar na Nuvem</span>
+                </button>
+                 <button id="download-button" class="w-full flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4 4-4-4"/></svg>
+                    <span>Carregar da Nuvem</span>
+                </button>
+                <div id="sync-status" class="mt-2 text-xs text-center p-1 rounded hidden"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            <div class="max-w-7xl mx-auto">
+                
+                <!-- Benefits View -->
+                <div id="benefits-view" class="view active">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Cálculo e Resumo Mensal</h2>
+                    
+                    <!-- Dashboard Resumo -->
+                    <div id="dashboard-summary" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Custo VA (Mês)</p>
+                            <p id="summary-va" class="text-2xl font-bold text-blue-600 mt-1">R$ 0,00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Custo VT (Mês)</p>
+                            <p id="summary-vt" class="text-2xl font-bold text-green-600 mt-1">R$ 0,00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Finalizados</p>
+                            <p id="summary-calculated" class="text-2xl font-bold text-gray-700 mt-1">0 / 0</p>
+                        </div>
+                         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Dias Ausentes (Total)</p>
+                            <p id="summary-absences" class="text-2xl font-bold text-red-600 mt-1">0</p>
+                        </div>
+                         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Cestas Físicas</p>
+                            <p id="summary-cestas" class="text-2xl font-bold text-purple-600 mt-1">0</p>
+                        </div>
+                    </div>
+
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
+                         <h3 class="text-lg font-semibold text-gray-700 mb-3">Evolução de Custos (Últimos 6 Meses)</h3>
+                         <div class="chart-container">
+                             <canvas id="cost-evolution-chart"></canvas>
+                         </div>
+                    </div>
+
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <label for="unit-filter" class="font-semibold text-sm">Filtrar Unidade:</label>
+                            <select id="unit-filter" class="p-2 border border-gray-300 rounded-lg"></select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="diasUteis" class="font-semibold">Dias Úteis:</label>
+                            <input id="diasUteis" type="number" placeholder="Ex: 22" class="p-2 border rounded-lg w-24"/>
+                            <label for="feriados" class="font-semibold">Feriados:</label>
+                            <input id="feriados" type="number" placeholder="Ex: 1" value="0" class="p-2 border rounded-lg w-20"/>
+                            <button id="suggest-days-button" class="bg-gray-200 py-2 px-3 rounded-lg hover:bg-gray-300" title="Sugerir dias úteis (Seg-Sex)">Sugerir</button>
+                        </div>
+                         <div class="flex items-center gap-2">
+                             <label class="font-semibold">Período:</label>
+                             <select id="month-select" class="p-2 border border-gray-300 rounded-lg"></select>
+                             <select id="year-select" class="p-2 border border-gray-300 rounded-lg"></select>
+                         </div>
+                    </div>
+                     <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap items-center justify-start gap-4">
+                         <button id="calculate-advance-button" class="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 flex items-center justify-center min-w-[240px]">
+                            <span class="button-text">Calcular Adiantamento (Mês Seguinte)</span>
+                            <span class="spinner hidden ml-2"></span>
+                         </button>
+                         <button id="finalize-month-button" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center min-w-[180px]">
+                            <span class="button-text">Finalizar Mês Atual</span>
+                            <span class="spinner hidden ml-2"></span>
+                         </button>
+                         <div class="flex-grow"></div>
+                         <button id="export-vavt-button" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                (VA/VT/Cesta)
+                            </button>
+                         <button id="export-janta-button" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                (Janta)
+                            </button>
+                         <button id="export-cafe-button" class="bg-orange-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                (Café)
+                            </button>
+                     </div>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Colaborador</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Adiant. VA</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Devido VA</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Saldo VA</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Adiant. VT</th>
+                                     <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Devido VT</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Saldo VT</th>
+                                    <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Cesta Básica</th>
+                                    <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="benefits-table-body" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                 
+                <div id="reports-view" class="view">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Relatórios Anuais</h2>
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-2">
+                            <label for="report-year-select" class="font-semibold">Ano:</label>
+                            <select id="report-year-select" class="p-2 border border-gray-300 rounded-lg"></select>
+                        </div>
+                         <div class="flex items-center gap-2">
+                            <label for="report-type-select" class="font-semibold">Tipo:</label>
+                            <select id="report-type-select" class="p-2 border border-gray-300 rounded-lg">
+                                <option value="employee">Por Colaborador</option>
+                                <option value="unit">Por Unidade</option>
+                            </select>
+                        </div>
+                        <button id="generate-report-button" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Gerar Relatório</button>
+                         <button id="export-report-button" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                             Exportar Relatório
+                        </button>
+                    </div>
+                     <div id="report-output" class="bg-white shadow-md rounded-lg overflow-x-auto p-4">
+                         <p class="text-gray-500 text-center">Selecione o ano e tipo e clique em "Gerar Relatório".</p>
+                     </div>
+                </div>
+
+                <!-- Events View -->
+                <div id="events-view" class="view">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-900">Lançamento de Eventos</h2>
+                         <div class="flex gap-2">
+                             <button id="mass-event-button" class="flex items-center gap-2 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                <span>Lançamento em Massa</span>
+                            </button>
+                             <button id="import-viagens-button" class="flex items-center gap-2 bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <span>Importar CSV Viagens</span>
+                            </button>
+                            <input type="file" id="import-viagens-csv-input" accept=".csv">
+                            <button id="new-event-button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Novo Evento</span></button>
+                        </div>
+                    </div>
+                    
+                     <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+                         <div class="flex justify-between items-center mb-4">
+                             <div class="flex items-center gap-2 calendar-nav">
+                                 <button id="prev-month-btn">&lt;</button>
+                                 <h3 id="calendar-month-year" class="text-xl font-semibold text-center w-48"></h3>
+                                 <button id="next-month-btn">&gt;</button>
+                             </div>
+                             <div class="flex items-center gap-2">
+                                  <label for="calendar-employee-filter" class="text-sm font-medium">Filtrar Colaborador:</label>
+                                  <select id="calendar-employee-filter" class="p-1 border border-gray-300 rounded-lg text-sm"></select>
+                             </div>
+                         </div>
+                         <div class="calendar-header">
+                             <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                         </div>
+                         <div id="calendar-grid" class="calendar-grid">
+                             <!-- Calendar days are generated by JS -->
+                         </div>
+                     </div>
+
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8">Lista de Eventos</h3>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50"><tr><th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Colaborador</th><th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th><th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Data/Período</th><th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Valor/Detalhe</th><th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th></tr></thead>
+                            <tbody id="events-table-body" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Employees View -->
+                <div id="employees-view" class="view">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-900">Colaboradores</h2><button id="new-employee-button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Novo Colaborador</span></button></div>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto"><table class="w-full">
+                        <thead class="bg-gray-50"><tr>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Matrícula</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Unidade</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Setor</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr></thead>
+                        <tbody id="employees-table-body" class="divide-y"></tbody>
+                    </table></div>
+                </div>
+
+                 <!-- Setores View (New) -->
+                <div id="setores-view" class="view">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-900">Setores / Localidades</h2><button id="new-setor-button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Novo Setor/Localidade</span></button></div>
+                     <p class="text-sm text-gray-600 mb-4 -mt-4">Define os valores de VA/VT e as regras de Cesta Básica para um grupo de colaboradores.</p>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto"><table class="w-full">
+                        <thead class="bg-gray-50"><tr>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Nome do Setor/Local.</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Localidade (Unidade)</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">VA Efetivo (Diário)</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">VT Efetivo (Diário)</th>
+                             <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Cesta Básica</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr></thead>
+                        <tbody id="setores-table-body" class="divide-y"></tbody>
+                    </table></div>
+                </div>
+
+                <!-- Localidades View (NEW) -->
+                <div id="localidades-view" class="view">
+                     <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-900">Localidades</h2><button id="new-localidade-button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Nova Localidade</span></button></div>
+                     <p class="text-sm text-gray-600 mb-4 -mt-4">Agrupa setores sob uma Unidade (Ex: "Fábrica Camaçari" ou "Escritório Salvador" sob a "Matriz").</p>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto"><table class="w-full">
+                        <thead class="bg-gray-50"><tr>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Nome da Localidade</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Unidade (Matriz)</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr></thead>
+                        <tbody id="localidades-table-body" class="divide-y"></tbody>
+                    </table></div>
+                </div>
+
+
+                <!-- Units View -->
+                <div id="units-view" class="view">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-900">Unidades (Matriz)</h2><button id="new-unit-button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Nova Unidade</span></button></div>
+                     <p class="text-sm text-gray-600 mb-4 -mt-4">Define o valor base do VA para todos os setores/localidades vinculados.</p>
+                    <div class="bg-white shadow-md rounded-lg overflow-x-auto"><table class="w-full">
+                        <thead class="bg-gray-50"><tr>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">Nome da Unidade</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase">VA Base (Matriz)</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr></thead>
+                        <tbody id="units-table-body" class="divide-y"></tbody>
+                    </table></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+    
+    <!-- Generic Modal Structure -->
+    <div id="modal-container" class="modal-container fixed inset-0 z-50 items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-bold"></h2>
+                <button id="modal-close-button" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="modal-body" class="p-4 max-h-[70vh] overflow-y-auto"></div>
+             <!-- Footer for confirmation buttons -->
+            <div id="modal-footer" class="p-4 border-t flex justify-end gap-2 hidden">
+                 <button id="modal-cancel-button" class="py-2 px-4 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
+                 <button id="modal-confirm-button" class="py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Area for Paystub -->
+    <div id="printable-area" class="hidden bg-white p-8">
+        <!-- Content inserted dynamically -->
+    </div>
+
+    
+</body>
+</html>
