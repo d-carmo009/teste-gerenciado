@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Benefícios</title>
+    
+    <!-- Bibliotecas Externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Nosso CSS Local -->
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
     
@@ -117,48 +121,56 @@
                          </div>
                     </div>
 
+                    <!-- Consolidated Control Panel -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div class="flex items-center gap-4">
+                                <label for="unit-filter" class="font-semibold text-sm">Filtrar Unidade:</label>
+                                <select id="unit-filter" class="p-2 border border-gray-300 rounded-lg"></select>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                 <label class="font-semibold">Período:</label>
+                                 <select id="month-select" class="p-2 border border-gray-300 rounded-lg"></select>
+                                 <select id="year-select" class="p-2 border border-gray-300 rounded-lg"></select>
+                             </div>
+                        </div>
 
-                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <label for="unit-filter" class="font-semibold text-sm">Filtrar Unidade:</label>
-                            <select id="unit-filter" class="p-2 border border-gray-300 rounded-lg"></select>
+                         <div class="flex flex-wrap items-center gap-4 border-t pt-4">
+                            <div class="flex items-center gap-2 border-r pr-4">
+                                <label for="diasUteis" class="font-semibold">Dias Úteis:</label>
+                                <input id="diasUteis" type="number" placeholder="Ex: 22" class="p-2 border rounded-lg w-20"/>
+                                <label for="feriados" class="font-semibold ml-2">Feriados:</label>
+                                <input id="feriados" type="number" placeholder="Ex: 1" value="0" class="p-2 border rounded-lg w-16"/>
+                                <button id="suggest-days-button" class="bg-gray-200 py-2 px-3 rounded-lg hover:bg-gray-300 text-sm" title="Sugerir dias úteis (Seg-Sex)">Sugerir</button>
+                            </div>
+
+                             <button id="calculate-advance-button" class="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 flex items-center justify-center min-w-[200px]">
+                                <span class="button-text">Calcular Adiantamento</span>
+                                <span class="spinner hidden ml-2"></span>
+                             </button>
+                             <button id="finalize-month-button" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center min-w-[160px]">
+                                <span class="button-text">Finalizar Mês</span>
+                                <span class="spinner hidden ml-2"></span>
+                             </button>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <label for="diasUteis" class="font-semibold">Dias Úteis:</label>
-                            <input id="diasUteis" type="number" placeholder="Ex: 22" class="p-2 border rounded-lg w-24"/>
-                            <label for="feriados" class="font-semibold">Feriados:</label>
-                            <input id="feriados" type="number" placeholder="Ex: 1" value="0" class="p-2 border rounded-lg w-20"/>
-                            <button id="suggest-days-button" class="bg-gray-200 py-2 px-3 rounded-lg hover:bg-gray-300" title="Sugerir dias úteis (Seg-Sex)">Sugerir</button>
-                        </div>
-                         <div class="flex items-center gap-2">
-                             <label class="font-semibold">Período:</label>
-                             <select id="month-select" class="p-2 border border-gray-300 rounded-lg"></select>
-                             <select id="year-select" class="p-2 border border-gray-300 rounded-lg"></select>
+
+                         <div class="flex flex-wrap items-center justify-start gap-2 mt-4 border-t pt-4">
+                            <span class="text-sm font-semibold text-gray-500 mr-2">Exportar:</span>
+                             <button id="export-vavt-button" class="bg-green-600 text-white font-semibold py-1 px-3 text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    (VA/VT/Cesta)
+                                </button>
+                             <button id="export-janta-button" class="bg-yellow-500 text-white font-semibold py-1 px-3 text-sm rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    (Janta)
+                                </button>
+                             <button id="export-cafe-button" class="bg-orange-500 text-white font-semibold py-1 px-3 text-sm rounded-lg hover:bg-orange-600 disabled:bg-gray-400 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    (Café)
+                                </button>
                          </div>
                     </div>
-                     <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap items-center justify-start gap-4">
-                         <button id="calculate-advance-button" class="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 flex items-center justify-center min-w-[240px]">
-                            <span class="button-text">Calcular Adiantamento (Mês Seguinte)</span>
-                            <span class="spinner hidden ml-2"></span>
-                         </button>
-                         <button id="finalize-month-button" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center min-w-[180px]">
-                            <span class="button-text">Finalizar Mês Atual</span>
-                            <span class="spinner hidden ml-2"></span>
-                         </button>
-                         <div class="flex-grow"></div>
-                         <button id="export-vavt-button" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                (VA/VT/Cesta)
-                            </button>
-                         <button id="export-janta-button" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                (Janta)
-                            </button>
-                         <button id="export-cafe-button" class="bg-orange-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 disabled:bg-gray-400 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                (Café)
-                            </button>
-                     </div>
+
                     <div class="bg-white shadow-md rounded-lg overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-50">
@@ -344,5 +356,4 @@
 
     
 </body>
-
 </html>
