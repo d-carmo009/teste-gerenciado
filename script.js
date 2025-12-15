@@ -109,27 +109,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return adjustedDate.toISOString().split("T")[0];
     };
         // Improved: Calculates exact number of days within a range, considering month boundaries
-        const calculateAbsenceDaysInMonth = (eventStartStr, eventEndStr, monthStart, monthEnd) => {
-            const eventStart = new Date(eventStartStr + 'T00:00:00'); 
-            const eventEnd = new Date(eventEndStr + 'T23:59:59'); 
-            if (isNaN(eventStart.getTime()) || isNaN(eventEnd.getTime()) || eventStart > eventEnd) return 0;
+        calculateAbsenceDaysInMonth = (eventStartStr, eventEndStr, monthStart, monthEnd) => {
+        const eventStart = new Date(eventStartStr + 'T00:00:00'); 
+        const eventEnd = new Date(eventEndStr + 'T23:59:59'); 
+        if (isNaN(eventStart.getTime()) || isNaN(eventEnd.getTime()) || eventStart > eventEnd) return 0;
 
-            const overlapStart = new Date(Math.max(monthStart, eventStart));
-            const overlapEnd = new Date(Math.min(monthEnd, eventEnd));
-            
-            let absenceDays = 0;
-            if (overlapStart <= overlapEnd) {
-                let currentDate = new Date(overlapStart);
-                currentDate.setHours(12, 0, 0, 0); 
-                const finalEnd = new Date(overlapEnd);
-                finalEnd.setHours(12, 0, 0, 0);
+        const overlapStart = new Date(Math.max(monthStart, eventStart));
+        const overlapEnd = new Date(Math.min(monthEnd, eventEnd));
+        
+        let absenceDays = 0;
+        if (overlapStart <= overlapEnd) {
+            let currentDate = new Date(overlapStart);
+            currentDate.setHours(12, 0, 0, 0); 
+            const finalEnd = new Date(overlapEnd);
+            finalEnd.setHours(12, 0, 0, 0);
 
-                while (currentDate <= finalEnd) {
+            while (currentDate <= finalEnd) {
+                const dayOfWeek = currentDate.getDay();
+                // 0 = Domingo, 6 = Sábado. Só conta se for de Segunda (1) a Sexta (5)
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
                     absenceDays++;
-                    currentDate.setDate(currentDate.getDate() + 1);
                 }
+                currentDate.setDate(currentDate.getDate() + 1);
             }
-            return absenceDays;
+        }
+        return absenceDays;
     };
 
         const getWeekdaysInMonth = (year, month, holidays = 0) => {
@@ -1973,6 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFirebase();
     fullRender();
 });
+
 
 
 
