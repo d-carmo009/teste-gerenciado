@@ -1828,14 +1828,141 @@ document.addEventListener('DOMContentLoaded', () => {
     calendarEmployeeFilter.addEventListener('change', renderCalendar);
 
 
-    // --- Firebase Sync ---
-    const initFirebase = () => { /* ... unchanged ... */ };
-    const updateSyncButtonState = () => { /* ... unchanged ... */ };
-    const handleSync = async (direction) => { /* ... unchanged ... */ };
-    const updateSyncStatus = (statusState, message) => { /* ... unchanged ... */ };
-    uploadButton.addEventListener('click', () => handleSync('upload'));
-    downloadButton.addEventListener('click', () => handleSync('download'));
+    const initFirebase = () => {
+        try {
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+               throw new Error("Configuração do Firebase inválida ou ausente.");
+            }
+            if (!firebase.apps.length) state.firebaseApp = firebase.initializeApp(firebaseConfig);
+            else state.firebaseApp = firebase.app();
+            state.firebaseAuth = firebase.auth();
+            state.firebaseDb = firebase.firestore();
+            state.db = state.firebaseDb; 
 
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) {
+                   try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await firebase.auth().signInWithCustomToken(__initial_auth_token);
+                        else await firebase.auth().signInAnonymously();
+                   } catch (error) { console.error("Firebase Auth Error:", error); state.isFirebaseReady = false; updateSyncButtonState(); }
+                } else {
+                     state.userId = user.uid;
+                     state.isFirebaseReady = true;
+                     updateSyncButtonState();
+                }
+            });
+        } catch (e) { console.error("Erro ao inicializar Firebase:", e); state.isFirebaseReady = false; updateSyncButtonState(); }
+    };
+
+    const updateSyncButtonState = () => {
+         const ready = state.isFirebaseReady && !!state.userId;
+         uploadButton.disabled = !ready;
+         downloadButton.disabled = !ready;
+         if (!ready) {
+             syncStatusDiv.textContent = 'Firebase não conectado.';
+             syncStatusDiv.className = 'mt-2 text-xs text-center p-1 rounded bg-yellow-100 text-yellow-700';
+             syncStatusDiv.classList.remove('hidden');
+         } else {
+              if (!syncStatusDiv.textContent.includes('Sincronizando')) { 
+                 syncStatusDiv.classList.add('hidden');
+                 syncStatusDiv.textContent = '';
+              }
+         }
+    };
+    
+    const handleSync = async (direction) => {
+         if (!state.isFirebaseReady || !state.userId || !state.db) {
+             updateSyncStatus('error', 'Conexão com Firebase indisponível.');
+             return;
+         }
+         const confirmationText = direction === 'upload' ? "Substituir dados na nuvem pelos locais?" : "Substituir dados locais pelos da nuvem? ISTO APAGARÁ SEUS DADOS LOCAIS ATUAIS.";
+         
+         showConfirmModal(confirmationText, async () => {
+             updateSyncStatus('syncing', 'Sincronizando...');
+             uploadButton.disabled = true;
+             downloadButton.disabled = true;
+
+             const collections = ['units', 'localidades', 'setores', 'employees', 'events', 'allCalculations'];
+             const localData = { 
+                 units: state.units, 
+                 localidades: state.localidades,
+                 setores: state.setores,
+                 employees: state.employees, 
+                 events: state.events, 
+                 allCalculations: state.allCalculations 
+             };
+             const firestore = state.db;
+
+             try {
+                 if (direction === 'upload') {
+                     const batch = firestore.batch();
+                     for (const collName of collections) {
+                         const docRef = firestore.collection(`/artifacts/${state.appId}/users/${state.userId}/${collName}`).doc('data');
+                         // Convert dates to Firestore Timestamps before saving
+                         const dataToSave = JSON.parse(JSON.stringify(localData[collName]), (key, value) => {
+                              if ((key === 'startDate' || key === 'endDate' || key === 'calculatedAt' || key === 'finalizedAt') && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                                 // Check if firebase.firestore.Timestamp exists before using it
+                                 if (firebase && firebase.firestore && firebase.firestore.Timestamp) {
+                                    return firebase.firestore.Timestamp.fromDate(new Date(value));
+                                 }
+                             }
+                             return value;
+                         });
+                         batch.set(docRef, { content: JSON.stringify(dataToSave) });
+                     }
+                     await batch.commit();
+                     updateSyncStatus('success', 'Dados salvos na nuvem!');
+                 } else { // download
+                     for (const collName of collections) {
+                         const docRef = firestore.collection(`/artifacts/${state.appId}/users/${state.userId}/${collName}`).doc('data');
+                         const docSnap = await docRef.get();
+                         if (docSnap.exists) {
+                              // Parse Firestore data, ensuring dates/timestamps are handled if needed (Firestore SDK often does this)
+                              // For simplicity, assuming data is stored as plain JSON strings as in upload.
+                              const data = JSON.parse(docSnap.data().content, (key, value) => {
+                                  if (value && typeof value === 'object' && value.seconds !== undefined && value.nanoseconds !== undefined && firebase && firebase.firestore && firebase.firestore.Timestamp) {
+                                     try { return new firebase.firestore.Timestamp(value.seconds, value.nanoseconds).toDate().toISOString(); } 
+                                     catch(e) { console.warn("Erro ao converter timestamp:", e, value); return value; } 
+                                 }
+                                 return value;
+                             });
+                             state[collName] = data; 
+                             saveData(collName); 
+                         } else {
+                             // If document doesn't exist in Firestore, clear local data for that collection
+                             state[collName] = collName === 'allCalculations' ? {} : [];
+                             saveData(collName);
+                         }
+                     }
+                     updateSyncStatus('success', 'Dados carregados da nuvem!');
+                     fullRender(); // Re-render UI with new data
+                 }
+             } catch (error) {
+                 console.error("Sync error:", error);
+                 updateSyncStatus('error', `Erro: ${error.message}`);
+             } finally {
+                 updateSyncButtonState(); // Re-enable buttons based on final state
+             }
+         });
+    };
+    
+    const updateSyncStatus = (statusState, message) => {
+        syncStatusDiv.textContent = message;
+        syncStatusDiv.className = `mt-2 text-xs text-center p-1 rounded ${
+            statusState === 'error' ? 'bg-red-100 text-red-700' : 
+            statusState === 'success' ? 'bg-green-100 text-green-700' : 
+            'bg-blue-100 text-blue-700' // syncing
+        }`;
+            syncStatusDiv.classList.remove('hidden');
+        if (statusState !== 'syncing') {
+            setTimeout(() => {
+                syncStatusDiv.classList.add('hidden');
+                syncStatusDiv.textContent = '';
+                    updateSyncButtonState(); // Ensure buttons reflect final ready state
+            }, 4000);
+        }
+    };
         // --- Local Backup/Restore ---
     exportLocalButton.addEventListener('click', () => { /* ... unchanged ... */ });
     importLocalButton.addEventListener('click', () => { /* ... unchanged ... */ });
@@ -1846,3 +1973,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initFirebase();
     fullRender();
 });
+
