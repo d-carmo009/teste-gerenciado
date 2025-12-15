@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < 5; i++) {
                 const option = document.createElement('option');
                 option.value = currentYear - i;
-                option.textContent = currentYear - i;
+                option.textContent = currentYear + i;
                 yearSelectBenefits.appendChild(option);
             }
         }
@@ -1973,5 +1973,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initFirebase();
     fullRender();
 });
+
 
 
