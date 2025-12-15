@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newSetorButton = document.getElementById('new-setor-button'); 
     const newEmployeeButton = document.getElementById('new-employee-button');
     const newEventButton = document.getElementById('new-event-button');
-    const massEventButton = document.getElementById('mass-event-button'); // NEW
+    const massEventButton = document.getElementById('mass-event-button'); 
     const calculateAdvanceButton = document.getElementById('calculate-advance-button');
     const finalizeMonthButton = document.getElementById('finalize-month-button');
     const suggestDaysButton = document.getElementById('suggest-days-button');
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportCafeButton = document.getElementById('export-cafe-button');
     const importViagensButton = document.getElementById('import-viagens-button');
     const importViagensCSVInput = document.getElementById('import-viagens-csv-input');
-    const printableArea = document.getElementById('printable-area'); // NEW
+    const printableArea = document.getElementById('printable-area'); 
 
 
     // --- HELPERS ---
@@ -203,13 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVIGATION ---
     const switchView = (viewId) => {
         state.currentView = viewId;
-        Object.values(views).forEach(v => v.classList.remove('active'));
+        Object.values(views).forEach(v => {
+            if (v) v.classList.remove('active');
+        });
         sidebarButtons.forEach(b => b.classList.remove('active'));
         
             if (views[viewId]) {
             views[viewId].classList.add('active');
             } else {
-                views.benefits.classList.add('active'); 
+                if (views.benefits) views.benefits.classList.add('active'); 
                 viewId = 'benefits'; 
             }
 
@@ -217,9 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (button) {
                 button.classList.add('active');
             } else {
-                document.querySelector('.sidebar-button[data-view="benefits"]').classList.add('active'); // Highlight default
+                const defaultBtn = document.querySelector('.sidebar-button[data-view="benefits"]');
+                if (defaultBtn) defaultBtn.classList.add('active'); 
             }
-        fullRender(); // Call full render which now includes calendar rendering if needed
+        fullRender(); 
     };
     sidebarButtons.forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
 
