@@ -497,10 +497,131 @@
              }
 
              // --- Calendar Rendering Logic ---
-             function renderCalendar() { /* ... unchanged ... */ }
-             function populateCalendarEmployeeFilter() { /* ... unchanged ... */ }
+             function renderCalendar() {
+    const year = state.calendarDate.year;
+    const month = state.calendarDate.month;
+    
+    calendarMonthYear.textContent = new Date(year, month - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    calendarGrid.innerHTML = '';
+
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    // Células vazias antes do primeiro dia
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day other-month';
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    const filterEmployeeId = calendarEmployeeFilter.value;
+
+    // Dias do mês
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        dayCell.innerHTML = `<span class="calendar-day-number">${i}</span>`;
+        
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        
+        // Filtrar e mostrar eventos
+        state.events.forEach(evt => {
+             if (filterEmployeeId && evt.employeeId !== filterEmployeeId) return;
+             if (evt.type === 'ajuste') return; // Ajustes não aparecem no grid diário
+             
+             const start = evt.startDate;
+             const end = evt.endDate;
+             
+             if (dateStr >= start && dateStr <= end) {
+                 const emp = state.employees.find(e => e.id === evt.employeeId);
+                 const evtDiv = document.createElement('div');
+                 evtDiv.className = `event-marker event-${evt.type}`;
+                 evtDiv.textContent = `${emp?.name.split(' ')[0] || '?'}: ${evt.type}`;
+                 evtDiv.title = `${emp?.name}: ${evt.notes || evt.type}`;
+                 evtDiv.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     showEventModal(evt);
+                 });
+                 dayCell.appendChild(evtDiv);
+             }
+        });
+
+        // Clique no dia para adicionar evento
+        dayCell.addEventListener('click', () => {
+             // Abre modal pré-preenchido com a data clicada
+             showEventModal();
+             const startInput = document.querySelector('input[name="startDate"]');
+             const endInput = document.querySelector('input[name="endDate"]');
+             if(startInput && endInput) {
+                 startInput.value = dateStr;
+                 endInput.value = dateStr;
+             }
+        });
+
+        calendarGrid.appendChild(dayCell);
+    }
+}
+             function populateCalendarEmployeeFilter() {
+    const currentVal = calendarEmployeeFilter.value;
+    calendarEmployeeFilter.innerHTML = '<option value="">Todos</option>';
+    state.employees.sort((a,b) => a.name.localeCompare(b.name)).forEach(e => {
+        const option = document.createElement('option');
+        option.value = e.id;
+        option.textContent = e.name;
+        calendarEmployeeFilter.appendChild(option);
+    });
+    calendarEmployeeFilter.value = currentVal;
+}
              // --- Cost Evolution Chart ---
-             function renderCostEvolutionChart() { /* ... unchanged ... */ }
+             function renderCostEvolutionChart() {
+    if (!state.costChartInstance && document.getElementById('cost-evolution-chart')) {
+         const ctx = document.getElementById('cost-evolution-chart').getContext('2d');
+         state.costChartInstance = new Chart(ctx, {
+             type: 'bar',
+             data: { labels: [], datasets: [] },
+             options: { responsive: true, maintainAspectRatio: false }
+         });
+    }
+    
+    if (!state.costChartInstance) return;
+
+    // Gerar dados dos últimos 6 meses
+    const labels = [];
+    const dataVA = [];
+    const dataVT = [];
+    const today = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        labels.push(d.toLocaleString('pt-BR', { month: 'short' }));
+        
+        let totalVA = 0;
+        let totalVT = 0;
+        
+        const calcs = state.allCalculations[key] || {};
+        Object.values(calcs).forEach(c => {
+            if (c.status === 'finalized') {
+                totalVA += (c.devidoVABase || 0) + (c.devidoVAComp || 0);
+                totalVT += (c.devidoVT || 0);
+            } else if (c.status === 'advanced') {
+                 totalVA += (c.adiantadoVABase || 0) + (c.adiantadoVAComp || 0);
+                 totalVT += (c.adiantadoVT || 0);
+            }
+        });
+        dataVA.push(totalVA);
+        dataVT.push(totalVT);
+    }
+
+    state.costChartInstance.data = {
+        labels: labels,
+        datasets: [
+            { label: 'Custo VA', data: dataVA, backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgb(59, 130, 246)', borderWidth: 1 },
+            { label: 'Custo VT', data: dataVT, backgroundColor: 'rgba(16, 185, 129, 0.5)', borderColor: 'rgb(16, 185, 129)', borderWidth: 1 }
+        ]
+    };
+    state.costChartInstance.update();
+}
             // --- Reports Logic ---
             function renderReportsView() { /* ... unchanged ... */ }
             function generateAnnualSummary() { /* ... unchanged ... */ }
@@ -1645,4 +1766,5 @@
             initFirebase();
             fullRender();
         });
+
     </script>
